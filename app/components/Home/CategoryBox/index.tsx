@@ -2,19 +2,20 @@ import React from "react";
 import { StyleSheet, Text, View, Image, Dimensions } from "react-native";
 import { ICategory } from "../../../interfaces";
 import { TouchableOpacity } from "react-native-gesture-handler";
-import { useNavigation } from "@react-navigation/native";
+import { COLORS } from "../../../styles/global";
 const windowWidth = Dimensions.get("window").width;
 const windowHeight = Dimensions.get("window").height;
 
 interface CategoryBoxProps {
   category: ICategory;
+  onPress: () => void;
 }
-export const CategoryBox: React.FC<CategoryBoxProps> = ({ category }) => {
-  const navigation = useNavigation();
+export const CategoryBox: React.FC<CategoryBoxProps> = ({
+  category,
+  onPress,
+}) => {
   return (
-    <TouchableOpacity
-      onPress={() => navigation.navigate("Deliveries", category)}
-    >
+    <TouchableOpacity onPress={onPress}>
       <View style={styles.product}>
         <View style={styles.imageContainer}>
           <Image style={styles.image} source={{ uri: category.image }} />
@@ -32,10 +33,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 5,
     borderStyle: "dashed",
-    borderColor: "grey",
+    borderColor: COLORS.BORDER,
     flexDirection: "column",
     justifyContent: "space-between",
     padding: 5,
+    backgroundColor: COLORS.MAIN,
   },
   imageContainer: {
     alignItems: "center",
