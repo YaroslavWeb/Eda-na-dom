@@ -6,7 +6,7 @@ import { createStackNavigator } from "@react-navigation/stack";
 import { YellowBox } from "react-native";
 import _ from "lodash";
 
-import HomeScreen from "./app/screens/HomeScreen";
+import { HomeScreen } from "./app/screens/HomeScreen";
 import { Category } from "./app/screens/Category";
 import { Delivery } from "./app/screens/Delivery";
 
@@ -20,7 +20,6 @@ console.warn = (message: string) => {
 };
 
 const Stack = createStackNavigator();
-
 export default function App() {
   return (
     <NavigationContainer>
@@ -28,7 +27,9 @@ export default function App() {
         <Stack.Screen
           name="Home"
           component={HomeScreen}
-          options={{ headerShown: false }}
+          options={{
+            headerShown: false,
+          }}
         />
         <Stack.Screen
           name="Category"

@@ -1,10 +1,17 @@
 import React from "react";
-import { StyleSheet, Text, View, Image, Dimensions } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  Image,
+  Dimensions,
+  TouchableOpacity,
+} from "react-native";
+
 import { ICategory } from "../../../interfaces";
-import { TouchableOpacity } from "react-native-gesture-handler";
 import { COLORS } from "../../../styles/global";
+
 const windowWidth = Dimensions.get("window").width;
-const windowHeight = Dimensions.get("window").height;
 
 interface CategoryBoxProps {
   category: ICategory;

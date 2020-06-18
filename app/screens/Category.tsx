@@ -99,18 +99,26 @@ interface CategoryProps {
 }
 
 export const Category: React.FC<CategoryProps> = ({ route }) => {
-  const [category, setCategory] = useState(cafes);
+  const [deliveries, setDeliveries] = useState(cafes);
   const navigation = useNavigation();
   return (
     <View style={styles.container}>
+      <View style={styles.name}>
+        <Text style={styles.textName}>{route.params.category.name}</Text>
+      </View>
       <FlatList
-        data={category}
+        data={deliveries}
         contentContainerStyle={styles.list}
-        keyExtractor={(item) => "category_" + item.id}
+        keyExtractor={(item) => "deliveries_" + item.id}
         renderItem={({ item }) => (
           <DeliveryCard
             delivery={item}
-            onPress={() => navigation.navigate("Delivery", item)}
+            onPress={() =>
+              navigation.navigate("Delivery", {
+                delivery: item,
+                categories: route.params.categories,
+              })
+            }
           />
         )}
         showsVerticalScrollIndicator={false}
@@ -133,4 +141,10 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   list: {},
+  name: {
+    marginVertical: 10,
+  },
+  textName: {
+    fontSize: 28,
+  },
 });
