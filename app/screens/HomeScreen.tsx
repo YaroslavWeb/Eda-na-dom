@@ -40,6 +40,7 @@ export const HomeScreen = () => {
                     navigation.navigate("Category", {
                       category: item,
                       categories,
+                      cityID: "IOIbXJyRMWCRBJ64ZzAu",
                     })
                   }
                 />

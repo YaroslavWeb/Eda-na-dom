@@ -29,7 +29,9 @@ export const DeliveryCard: React.FC<DeliveryCardProps> = ({
         <Image style={styles.image} source={{ uri: delivery.logo }} />
         <View style={styles.text}>
           <Text style={styles.name}>{delivery.name}</Text>
-          <Text>Минимальный чек для доставки: {delivery.minPrice}р.</Text>
+          <Text>
+            Минимальный чек для бесплатной доставки: {delivery.delivFree}р.
+          </Text>
         </View>
       </View>
     </TouchableOpacity>

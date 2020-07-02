@@ -7,47 +7,82 @@ import {
   Dimensions,
   SafeAreaView,
   ScrollView,
+  RefreshControl,
 } from "react-native";
 import Constants from "expo-constants";
-
+import { Feather } from "@expo/vector-icons";
 import { COLORS, globalStyles } from "../styles/global";
-import { ICategory } from "../interfaces";
-import moment, { locale } from "moment";
+import { ICategory, IDelivery } from "../interfaces";
+import moment, { locale, now } from "moment";
 import "moment/locale/ru";
-import { analytics } from "firebase";
-const windowWidth = Dimensions.get("window").width;
+import { AntDesign } from "@expo/vector-icons";
 const windowHeight = Dimensions.get("window").height;
 
 interface DeliveryProps {
   route: any;
 }
+function wait(timeout: any) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, timeout);
+  });
+}
+
 export const Delivery: React.FC<DeliveryProps> = ({ route }) => {
+  const [delivery, setDelivery] = React.useState<IDelivery>(
+    route.params.delivery
+  );
+
+  let timeFormat2 = "HH:mm";
+  let openingTime;
+  let closingTime;
+  let nowTime;
+  function isAvailable(
+    opening: moment.MomentInput,
+    closing: moment.MomentInput,
+    now: moment.MomentInput
+  ) {
+    openingTime = moment(opening, timeFormat2).date(1);
+    closingTime = moment(closing, timeFormat2).date(1);
+    nowTime = moment(now, timeFormat2).date(1);
+    if (closingTime.isBefore(openingTime)) {
+      closingTime.date(2);
+    }
+    return nowTime.isBetween(openingTime, closingTime);
+  }
+
   moment.locale("ru");
-  const [today, setToday] = React.useState(moment().format("LT"));
-  let now = moment();
-  //let now = moment(route.params.delivery.timeOpen).diff(moment().toNow());
-  let endTime = route.params.delivery.timeOpen;
-  let startTime = moment().utcOffset(8).format("HH:mm");
+  const [today, setToday] = React.useState(moment().utcOffset(8).format("LT"));
+  const [refreshing, setRefreshing] = React.useState(false);
+
+  let timeOpen = moment(delivery.timeOpen, "HH:mm").format("HH:mm");
+  let timeClose = moment(delivery.timeClose, "HH:mm").format("HH:mm");
   let hoursToOpen = moment
-    .utc(
-      moment.duration(endTime, "hours") - moment.duration(startTime, "hours")
-    )
+    .utc(moment.duration(timeOpen) - moment.duration(today))
     .format("HH ч mm мин");
-  console.log(typeof route.params.delivery.timeOpen);
+  let hoursToClose = moment
+    .utc(moment.duration(timeClose) - moment.duration(today))
+    .format("HH ч mm мин");
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    setToday(moment().utcOffset(8).format("LT"));
+
+    wait(2000).then(() => setRefreshing(false));
+  }, [refreshing]);
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView>
+      <ScrollView
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         <View style={styles.blockTop}>
           <View style={styles.blockImage}>
-            <Image
-              style={styles.image}
-              source={{ uri: route.params.delivery.logo }}
-            />
+            <Image style={styles.image} source={{ uri: delivery.logo }} />
           </View>
           <View style={styles.blockName}>
             <View style={{}}>
-              <Text style={styles.name}>{route.params.delivery.name}</Text>
+              <Text style={styles.name}>{delivery.name}</Text>
             </View>
 
             <View>
@@ -76,25 +111,32 @@ export const Delivery: React.FC<DeliveryProps> = ({ route }) => {
               }}
             >
               <Text style={[globalStyles.textMedium, styles.blockTimeText]}>
-                {route.params.delivery.timeOpen}-
-                {route.params.delivery.timeClose}
+                {delivery.timeOpen}-{delivery.timeClose}
               </Text>
             </View>
-            {moment().isBetween(
-              route.params.delivery.timeOpen,
-              route.params.delivery.timeClose
-            ) ? (
-              <Text style={{ fontSize: 14 }}>жопа</Text>
+            {isAvailable(timeOpen, timeClose, moment()) ? (
+              <View
+                style={{
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Text style={{ fontSize: 12 }}>Закроется через</Text>
+                <Text style={{ fontSize: 12 }}>{hoursToClose}</Text>
+              </View>
             ) : (
               <View
                 style={{
                   alignItems: "center",
-                  paddingHorizontal: 14, //РАЗОБРАТЬСЯ С ПАДДИНГАМИ !!!!!!
+                  justifyContent: "center",
                 }}
               >
-                <Text style={{ fontSize: 14 }}>
-                  Откроется через {hoursToOpen}
-                </Text>
+                <View
+                  style={{ justifyContent: "center", alignItems: "center" }}
+                >
+                  <Text style={{ fontSize: 12 }}>Откроется через</Text>
+                  <Text style={{ fontSize: 12 }}>{hoursToOpen}</Text>
+                </View>
               </View>
             )}
           </View>
@@ -105,29 +147,114 @@ export const Delivery: React.FC<DeliveryProps> = ({ route }) => {
               }}
             >
               <Text style={[globalStyles.textMedium, styles.blockTimeText]}>
-                {route.params.delivery.minPrice}
+                {delivery.delivFree} ₽
               </Text>
             </View>
-            {moment().isBetween(
-              route.params.delivery.timeOpen,
-              route.params.delivery.timeClose
-            ) ? (
-              <Text style={{ fontSize: 14 }}>жопа</Text>
-            ) : (
-              <View
-                style={{
-                  alignItems: "center",
-                  justifyContent: "center",
-                  paddingHorizontal: 28, //РАЗОБРАТЬСЯ С ПАДДИНГАМИ !!!!!!
-                }}
-              >
-                <Text style={{ fontSize: 14 }}>Бесплатная доставка от</Text>
-              </View>
-            )}
+            <View style={{ justifyContent: "center", alignItems: "center" }}>
+              <Text style={{ fontSize: 12 }}>Бесплатная</Text>
+              <Text style={{ fontSize: 12 }}>доставка от</Text>
+            </View>
+          </View>
+          <View style={styles.openHours}>
+            <View
+              style={{
+                marginBottom: 10,
+              }}
+            >
+              <Text style={[globalStyles.textMedium, styles.blockTimeText]}>
+                {delivery.delivPrice} ₽
+              </Text>
+            </View>
+            <View style={{ justifyContent: "center", alignItems: "center" }}>
+              <Text style={{ fontSize: 12 }}>Стоимость</Text>
+              <Text style={{ fontSize: 12 }}>доставки</Text>
+            </View>
           </View>
         </View>
-        <View style={styles.blockDeliveryTime}>
-          <Text>Время доставки много минут</Text>
+        <View style={styles.blockPayment}>
+          <Text style={globalStyles.textMedium}>Как можно оплатить? </Text>
+          <View style={styles.typeOfPayment}>
+            {delivery.payment[0] ? (
+              <Feather name="check-circle" size={18} color="orange" />
+            ) : (
+              <AntDesign name="closecircleo" size={18} color="black" />
+            )}
+            <View style={styles.textPayment}>
+              <Text>Онлайн оплата картой</Text>
+            </View>
+          </View>
+          <View style={styles.typeOfPayment}>
+            {route.params.delivery.payment[1] ? (
+              <Feather name="check-circle" size={18} color="orange" />
+            ) : (
+              <AntDesign name="closecircleo" size={18} color="black" />
+            )}
+            <View style={styles.textPayment}>
+              <Text>Картой курьеру</Text>
+            </View>
+          </View>
+          <View style={styles.typeOfPayment}>
+            {route.params.delivery.payment[2] ? (
+              <Feather name="check-circle" size={18} color="orange" />
+            ) : (
+              <AntDesign name="closecircleo" size={18} color="black" />
+            )}
+            <View style={styles.textPayment}>
+              <Text>Наличными курьеру</Text>
+            </View>
+          </View>
+        </View>
+        {delivery.promocode && ( ///пофиксить отображение промокода
+          <View style={styles.blockPromo}>
+            <Text style={[globalStyles.textMedium]}>
+              Промокод:
+              <Text style={{ fontWeight: "bold" }}>{delivery.promocode}</Text>
+            </Text>
+
+            <Text style={[globalStyles.textSmall]}>{delivery.promoDesc}</Text>
+          </View>
+        )}
+
+        <View style={{ justifyContent: "center", alignItems: "center" }}>
+          <Text style={[globalStyles.textBig, { color: COLORS.MAIN }]}>
+            Актуальные акции
+          </Text>
+          <ScrollView horizontal>
+            {delivery.baners.map((item: any, index: number) => (
+              <View style={{ width: "100%" }} key={"baner_" + index}>
+                <Image style={{ width: "100%" }} source={{ uri: item }}></Image>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+        <View style={styles.links}>
+          <Text>{delivery.linkSite}</Text>
+          <Text>{delivery.linkInst}</Text>
+          <Text>{delivery.phoneNumber}</Text>
+        </View>
+
+        <View style={styles.AppLinks}>
+          <View style={{ width: "40%" }}>
+            <Image
+              style={{
+                height: 50,
+                width: 150,
+                resizeMode: "stretch",
+              }}
+              source={require("../../assets/Download_on_the_App_Store_Badge_RU.png")}
+            ></Image>
+          </View>
+
+          <View style={{ width: "40%" }}>
+            <Image
+              style={{
+                height: 50,
+                width: 150,
+                resizeMode: "stretch",
+              }}
+              source={require("../../assets/google-play-badge.png")}
+            ></Image>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -140,6 +267,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f8f4f4",
     padding: 5,
+    justifyContent: "center",
+    alignItems: "center",
   },
   name: {
     fontSize: 30,
@@ -167,17 +296,19 @@ const styles = StyleSheet.create({
   },
   openHours: {
     flexDirection: "column",
-    justifyContent: "space-between",
+    justifyContent: "space-evenly",
     alignItems: "center",
-    padding: 15,
-    width: "45%",
+    paddingVertical: 15,
+    paddingHorizontal: 4,
+    width: "30%",
     borderColor: COLORS.BORDER,
     borderWidth: 1,
+    marginHorizontal: 10,
   },
   category: {
     borderWidth: 1,
     paddingHorizontal: 12,
-    margin: 3,
+    margin: 1,
     borderColor: COLORS.BORDER,
     borderRadius: 8,
   },
@@ -188,13 +319,32 @@ const styles = StyleSheet.create({
   blockTimeText: {
     fontWeight: "bold",
   },
-  blockDeliveryTime: {
+  blockPayment: {
+    flexDirection: "column",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginVertical: 30,
+    marginHorizontal: 3,
+  },
+  textPayment: {
+    marginLeft: 10,
+  },
+  typeOfPayment: {
+    flexDirection: "row",
+    justifyContent: "space-around",
     marginVertical: 10,
-    justifyContent: "center",
-    alignItems: "center",
+  },
+  blockPromo: {
+    width: "100%",
+    backgroundColor: COLORS.MAIN,
     padding: 15,
-    width: "92%",
-    borderColor: COLORS.BORDER,
-    borderWidth: 1,
+  },
+  links: {
+    flexDirection: "column",
+  },
+  AppLinks: {
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "space-evenly",
   },
 });

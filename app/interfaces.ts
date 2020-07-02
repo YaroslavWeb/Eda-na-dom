@@ -1,3 +1,9 @@
+export interface ICity {
+  readonly id: string;
+  name: string;
+  // baners          : {deliveryId: string, uri: string}[]
+}
+
 export interface ICategory {
   readonly id: string;
   name: string;
@@ -12,13 +18,19 @@ export interface IDelivery {
   categories: string[];
   timeOpen: string;
   timeClose: string;
-  minPrice: string;
-  // payment         : boolean[]
-  // latitude        : string
-  // longitude       : string
+  delivFree: string;
+  delivPrice: string;
+  payment: boolean[];
+  addresses: string[];
+  promocode: string;
+  promoDesc: string;
   linkSite: string;
-  linkApp: string;
+  linkAppGoogle: string;
+  linkAppApple: string;
   linkInst: string;
   phoneNumber: string;
-  baners: { uri: string }[];
+  baners: string[];
+  // place           : {categoryID: string, point: number}[]
+  // rating          : number
+  // geo             : []
 }
